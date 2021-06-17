@@ -10,11 +10,7 @@ import uuid from 'react-native-uuid';
 import { Input } from '../../components/Form/Input';
 import { Button } from '../../components/Form/Button';
 
-import {
-  Container,
-  HeaderTitle,
-  Form
-} from './styles';
+import { Container, HeaderTitle, Form } from './styles';
 
 interface FormData {
   title: string;
@@ -24,27 +20,33 @@ interface FormData {
 
 const schema = Yup.object().shape({
   title: Yup.string().required('Título é obrigatório!'),
-  email: Yup.string().email('Não é um email válido').required('Email é obrigatório!'),
+  email: Yup.string()
+    .email('Não é um email válido')
+    .required('Email é obrigatório!'),
   password: Yup.string().required('Senha é obrigatória!'),
-})
+});
 
 export function RegisterLoginData() {
   const {
     control,
     handleSubmit,
     reset,
-    formState: {
-      errors
-    }
-  } = useForm();
+    formState: { errors },
+  } = useForm({ resolver: yupResolver(schema) });
 
   async function handleRegister(formData: FormData) {
     const newLoginData = {
       id: String(uuid.v4()),
-      ...formData
-    }
+      ...formData,
+    };
 
-    // Save data on AsyncStorage
+    const storedData = await AsyncStorage.getItem('@passmanager:logins');
+
+    const parsedData = JSON.parse(storedData!);
+
+    const newData = [...parsedData, newLoginData];
+
+    await AsyncStorage.setItem('@passmanager:logins', JSON.stringify(newData));
   }
 
   return (
@@ -58,48 +60,42 @@ export function RegisterLoginData() {
 
         <Form>
           <Input
-            title="Título"
-            name="title"
-            error={
-              // message error here
-            }
+            title='Título'
+            name='title'
+            error={errors.title && errors.title.message}
             control={control}
-            placeholder="Escreva o título aqui"
-            autoCapitalize="sentences"
+            placeholder='Escreva o título aqui'
+            autoCapitalize='sentences'
             autoCorrect
           />
           <Input
-            title="Email"
-            name="email"
-            error={
-              // message error here
-            }
+            title='Email'
+            name='email'
+            error={errors.email && errors.email.message}
             control={control}
-            placeholder="Escreva o Email aqui"
+            placeholder='Escreva o Email aqui'
             autoCorrect={false}
-            autoCapitalize="none"
-            keyboardType="email-address"
+            autoCapitalize='none'
+            keyboardType='email-address'
           />
           <Input
-            title="Senha"
-            name="password"
-            error={
-              // message error here
-            }
+            title='Senha'
+            name='password'
+            error={errors.password && errors.password.message}
             control={control}
             secureTextEntry
-            placeholder="Escreva a senha aqui"
+            placeholder='Escreva a senha aqui'
           />
 
           <Button
             style={{
-              marginTop: RFValue(26)
+              marginTop: RFValue(26),
             }}
-            title="Salvar"
+            title='Salvar'
             onPress={handleSubmit(handleRegister)}
           />
         </Form>
       </Container>
     </KeyboardAvoidingView>
-  )
+  );
 }

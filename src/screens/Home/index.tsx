@@ -9,7 +9,7 @@ import {
   Container,
   LoginList,
   EmptyListContainer,
-  EmptyListMessage
+  EmptyListMessage,
 } from './styles';
 
 interface LoginDataProps {
@@ -17,52 +17,68 @@ interface LoginDataProps {
   title: string;
   email: string;
   password: string;
-};
+}
 
 type LoginListDataProps = LoginDataProps[];
 
 export function Home() {
-  // const [searchListData, setSearchListData] = useState<LoginListDataProps>([]);
-  // const [data, setData] = useState<LoginListDataProps>([]);
+  const [searchListData, setSearchListData] = useState<LoginListDataProps>([]);
+  const [data, setData] = useState<LoginListDataProps>([]);
 
   async function loadData() {
-    // Get asyncStorage data, use setSearchListData and setData
+    const data = await AsyncStorage.getItem('@passmanager:logins');
+
+    if (data && data.length > 0) {
+      setData(JSON.parse(data));
+      setSearchListData(JSON.parse(data));
+    }
   }
+
   useEffect(() => {
     loadData();
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    loadData();
-  }, []));
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   function handleFilterLoginData(search: string) {
-    // Filter results inside data, save with setSearchListData
+    if (!search) return;
+
+    const loginExists = data.filter(item => item.title === search);
+
+    if (loginExists.length > 0) {
+      setSearchListData(loginExists);
+    }
   }
 
   return (
     <Container>
       <SearchBar
-        placeholder="Pesquise pelo nome do serviço"
-        onChangeText={(value) => handleFilterLoginData(value)}
+        placeholder='Pesquise pelo nome do serviço'
+        onChangeText={value => handleFilterLoginData(value)}
       />
 
       <LoginList
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         data={searchListData}
-        ListEmptyComponent={(
+        ListEmptyComponent={
           <EmptyListContainer>
             <EmptyListMessage>Nenhum item a ser mostrado</EmptyListMessage>
           </EmptyListContainer>
-        )}
+        }
         renderItem={({ item: loginData }) => {
-          return <LoginDataItem
-            title={loginData.title}
-            email={loginData.email}
-            password={loginData.password}
-          />
+          return (
+            <LoginDataItem
+              title={loginData.title}
+              email={loginData.email}
+              password={loginData.password}
+            />
+          );
         }}
       />
     </Container>
-  )
+  );
 }
